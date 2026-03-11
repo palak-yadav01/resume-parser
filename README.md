@@ -11,6 +11,10 @@ NLP-based system to extract structured information from resumes automatically. I
 - **100+ skill matching** across languages, frameworks, ML/AI tools
 - REST API + drag-and-drop web interface
 
+ ## SCREENSHOTS
+ <img width="1664" height="815" alt="Screenshot 2026-03-11 182220" src="https://github.com/user-attachments/assets/89a4158c-9a8d-4f33-987c-595db8520001" />
+<img width="1643" height="916" alt="Screenshot 2026-03-11 182122" src="https://github.com/user-attachments/assets/28bfaeaf-88c3-4bec-a0fd-76fa97ea8ec8" />
+
 ## Setup
 ```bash
 git clone https://github.com/palak-yadav01/resume-parser.git
@@ -25,9 +29,6 @@ POST /parse   →  multipart/form-data (PDF or DOCX)  →  JSON
 GET  /health  →  server status
 Stack
 Python 3.11 spaCy pdfplumber python-docx pandas Flask
-## SCREENSHOTS
-<img width="1664" height="815" alt="Screenshot 2026-03-11 182220" src="https://github.com/user-attachments/assets/89a4158c-9a8d-4f33-987c-595db8520001" />
-<img width="1643" height="916" alt="Screenshot 2026-03-11 182122" src="https://github.com/user-attachments/assets/28bfaeaf-88c3-4bec-a0fd-76fa97ea8ec8" />
 
 Author
 Palak Yadav — github.com/palak-yadav01
