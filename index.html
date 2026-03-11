@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Parser</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #060810;
+      color: #e2e8f0;
+      font-family: monospace;
+      min-height: 100vh;
+      padding: 40px 24px;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    .header { text-align: center; margin-bottom: 40px; }
+    .badge { font-size: 10px; letter-spacing: 0.3em; color: #00e5ff; margin-bottom: 8px; }
+    h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .subtitle { color: #64748b; font-size: 13px; }
+
+    /* Upload Box */
+    .upload-box {
+      border: 2px dashed #1e2535;
+      border-radius: 12px;
+      padding: 48px;
+      text-align: center;
+      margin-bottom: 32px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      background: #0d1117;
+    }
+    .upload-box:hover { border-color: #00e5ff; }
+    .upload-box.dragging { border-color: #00e5ff; background: #0d1a2a; }
+
+    .upload-icon { font-size: 48px; margin-bottom: 16px; }
+    .upload-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .upload-sub { color: #64748b; font-size: 12px; margin-bottom: 24px; }
+
+    .upload-btn {
+      background: #00e5ff;
+      color: #060810;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+    .upload-btn:hover { background: #00b8cc; }
+
+    #file-input { display: none; }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 32px;
+      color: #00e5ff;
+      font-size: 14px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #1e2535;
+      border-top-color: #00e5ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    .results { display: none; }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .results-title { font-size: 20px; font-weight: 800; }
+    .parse-another {
+      background: transparent;
+      border: 1px solid #1e2535;
+      color: #e2e8f0;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .parse-another:hover { border-color: #00e5ff; color: #00e5ff; }
+
+    /* Contact Cards */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .contact-card {
+      background: #0d1117;
+      border: 1px solid #1e2535;
+      border-top: 2px solid #00e5ff;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .card-label {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .card-value {
+      font-size: 13px;
+      color: #e2e8f0;
+      word-break: break-all;
+    }
+    .card-value a { color: #00e5ff; text-decoration: none; }
+    .card-value a:hover { text-decoration: underline; }
+
+    /* Section Blocks */
+    .section {
+      background: #0d1117;
+      border: 1px solid #1e2535;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .section-content {
+      font-size: 13px;
+      line-height: 1.7;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+    }
+
+    /* Skills */
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .skill-tag {
+      background: #0d1a2a;
+      border: 1px solid #00e5ff33;
+      color: #00e5ff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* Empty state */
+    .empty { color: #64748b; font-size: 12px; font-style: italic; }
+
+    /* Score bar */
+    .score-bar {
+      background: #0d1117;
+      border: 1px solid #1e2535;
+      border-top: 2px solid #7cfc6e;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .score-label { font-size: 10px; letter-spacing: 0.15em; color: #64748b; margin-bottom: 10px; }
+    .score-row { display: flex; align-items: center; gap: 12px; }
+    .score-track { flex: 1; background: #1e2535; border-radius: 4px; height: 8px; overflow: hidden; }
+    .score-fill { height: 100%; background: #7cfc6e; border-radius: 4px; transition: width 1s ease; }
+    .score-num { font-size: 20px; font-weight: 800; color: #7cfc6e; min-width: 48px; }
+    .score-desc { font-size: 11px; color: #7cfc6e; margin-top: 6px; }
+
+    /* Error */
+    .error-box {
+      background: #1a0a0a;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+      padding: 20px;
+      color: #ef4444;
+      font-size: 13px;
+      display: none;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <p class="badge">AI POWERED</p>
+    <h1>Resume Parser</h1>
+    <p class="subtitle">Upload a resume to extract structured information automatically</p>
+  </div>
+
+  <!-- Upload Box -->
+  <div class="upload-box" id="upload-box">
+    <div class="upload-icon">📄</div>
+    <p class="upload-title">Drop your resume here</p>
+    <p class="upload-sub">Supports PDF and DOCX formats</p>
+    <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+      Choose File
+    </button>
+    <input type="file" id="file-input" accept=".pdf,.docx"/>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="error-box"></div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Parsing resume with NLP...</p>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <div class="results-header">
+      <p class="results-title">✅ Extraction Complete</p>
+      <button class="parse-another" onclick="reset()">Parse Another</button>
+    </div>
+
+    <!-- Extraction Score -->
+    <div class="score-bar">
+      <p class="score-label">EXTRACTION CONFIDENCE SCORE</p>
+      <div class="score-row">
+        <div class="score-track">
+          <div class="score-fill" id="score-fill" style="width:0%"></div>
+        </div>
+        <p class="score-num" id="score-num">0%</p>
+      </div>
+      <p class="score-desc" id="score-desc"></p>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="contact-grid">
+      <div class="contact-card">
+        <p class="card-label">👤 NAME</p>
+        <p class="card-value" id="r-name">—</p>
+      </div>
+      <div class="contact-card">
+        <p class="card-label">📧 EMAIL</p>
+        <p class="card-value" id="r-email">—</p>
+      </div>
+      <div class="contact-card">
+        <p class="card-label">📞 PHONE</p>
+        <p class="card-value" id="r-phone">—</p>
+      </div>
+      <div class="contact-card">
+        <p class="card-label">🔗 LINKEDIN</p>
+        <p class="card-value" id="r-linkedin">—</p>
+      </div>
+      <div class="contact-card">
+        <p class="card-label">🐙 GITHUB</p>
+        <p class="card-value" id="r-github">—</p>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="section">
+      <p class="section-title">🛠️ SKILLS DETECTED</p>
+      <div class="skills-grid" id="r-skills"></div>
+    </div>
+
+    <!-- All Sections -->
+    <div class="section">
+      <p class="section-title">📝 SUMMARY</p>
+      <p class="section-content" id="r-summary"></p>
+    </div>
+    <div class="section">
+      <p class="section-title">🎓 EDUCATION</p>
+      <p class="section-content" id="r-education"></p>
+    </div>
+    <div class="section">
+      <p class="section-title">💼 WORK EXPERIENCE</p>
+      <p class="section-content" id="r-experience"></p>
+    </div>
+    <div class="section">
+      <p class="section-title">🚀 PROJECTS</p>
+      <p class="section-content" id="r-projects"></p>
+    </div>
+    <div class="section">
+      <p class="section-title">📜 CERTIFICATIONS</p>
+      <p class="section-content" id="r-certifications"></p>
+    </div>
+    <div class="section">
+      <p class="section-title">🏆 AWARDS</p>
+      <p class="section-content" id="r-awards"></p>
+    </div>
+    <div class="section">
+      <p class="section-title">🎯 ACTIVITIES & SOCIETIES</p>
+      <p class="section-content" id="r-activities"></p>
+    </div>
+
+  </div><!-- end results -->
+
+</div><!-- end container -->
+
+<script>
+  const fileInput = document.getElementById('file-input')
+  const uploadBox = document.getElementById('upload-box')
+
+  // File selected via button
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) parseFile(e.target.files[0])
+  })
+
+  // Drag and drop
+  uploadBox.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    uploadBox.classList.add('dragging')
+  })
+  uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('dragging'))
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault()
+    uploadBox.classList.remove('dragging')
+    const file = e.dataTransfer.files[0]
+    if (file) parseFile(file)
+  })
+
+  async function parseFile(file) {
+    // Show loading
+    document.getElementById('upload-box').style.display = 'none'
+    document.getElementById('error-box').style.display = 'none'
+    document.getElementById('results').style.display = 'none'
+    document.getElementById('loading').style.display = 'block'
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('http://localhost:5000/parse', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        showError(data.error || 'Parsing failed')
+        return
+      }
+
+      showResults(data)
+
+    } catch (err) {
+      showError('Could not connect to parser. Make sure python app.py is running!')
+    }
+  }
+
+  function showResults(data) {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('results').style.display = 'block'
+
+    // Calculate confidence score
+    const fields = ['name','email','phone','linkedin','github','summary','education','experience','projects']
+    const filled = fields.filter(f => data[f] && data[f].length > 0).length
+    const skillBonus = data.skills && data.skills.length > 3 ? 1 : 0
+    const score = Math.round(((filled + skillBonus) / (fields.length + 1)) * 100)
+
+    document.getElementById('score-fill').style.width = score + '%'
+    document.getElementById('score-num').textContent = score + '%'
+    document.getElementById('score-desc').textContent =
+      score >= 80 ? '✅ Excellent extraction — most fields found' :
+      score >= 60 ? '⚠️ Good extraction — some fields missing' :
+      '❌ Partial extraction — resume format may be complex'
+
+    // Contact info
+    setText('r-name', data.name)
+    setText('r-email', data.email)
+    setText('r-phone', data.phone)
+    setLink('r-linkedin', data.linkedin)
+    setLink('r-github', data.github)
+
+    // Skills
+    const skillsEl = document.getElementById('r-skills')
+    if (data.skills && data.skills.length > 0) {
+      skillsEl.innerHTML = data.skills
+        .map(s => `<span class="skill-tag">${s}</span>`)
+        .join('')
+    } else {
+      skillsEl.innerHTML = '<p class="empty">No skills detected</p>'
+    }
+
+    // Sections
+    setSection('r-summary', data.summary)
+    setSection('r-education', data.education)
+    setSection('r-experience', data.experience)
+    setSection('r-projects', data.projects)
+    setSection('r-certifications', data.certifications)
+    setSection('r-awards', data.awards)
+    setSection('r-activities', data.activities)
+  }
+
+  function setText(id, val) {
+    const el = document.getElementById(id)
+    el.textContent = val && val.trim() ? val.trim() : '—'
+  }
+
+  function setLink(id, val) {
+    const el = document.getElementById(id)
+    if (val && val.trim()) {
+      el.innerHTML = `<a href="${val}" target="_blank">${val}</a>`
+    } else {
+      el.textContent = '—'
+    }
+  }
+
+  function setSection(id, val) {
+    const el = document.getElementById(id)
+    if (val && val.trim()) {
+      el.textContent = val.trim()
+    } else {
+      el.textContent = 'Not found in resume'
+      el.classList.add('empty')
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('upload-box').style.display = 'block'
+    const errEl = document.getElementById('error-box')
+    errEl.textContent = '❌ ' + msg
+    errEl.style.display = 'block'
+  }
+
+  function reset() {
+    document.getElementById('results').style.display = 'none'
+    document.getElementById('upload-box').style.display = 'block'
+    document.getElementById('file-input').value = ''
+  }
+</script>
+</body>
+</html>
